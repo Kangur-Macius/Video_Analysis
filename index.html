@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d0f14">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Player Analysis">
+  <link rel="apple-touch-icon" href="icon-192.png">
+<title>Player Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --green:#00e676; --red:#ff3d57; --bg:#0d0f14; --card:#161a22; --border:#252b38; --text:#e8ecf4; --muted:#5a6280; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; padding:20px 16px 40px; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(2rem,8vw,3.2rem); letter-spacing:3px; color:#1a1f2e; -webkit-text-stroke:1.5px #e8ecf4; line-height:1; }
+  .info-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; max-width:900px; margin:0 auto 20px; }
+  .info-field { display:flex; flex-direction:column; gap:4px; }
+  .info-field label { font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+  .info-field input, .info-field select { background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.9rem; padding:8px 12px; outline:none; width:100%; min-width:0; }
+  .info-field input[type="date"] { appearance:none; -webkit-appearance:none; color-scheme:dark; }
+  .info-field input:focus, .info-field select:focus { border-color:var(--green); }
+  .info-field select option { background:#1e2330; }
+  .summary-bar { display:flex; justify-content:center; gap:24px; margin-bottom:28px; flex-wrap:wrap; }
+  .summary-stat { text-align:center; }
+  .summary-stat .val { font-family:'Bebas Neue',sans-serif; font-size:2rem; line-height:1; }
+  .summary-stat .lbl { font-size:0.7rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-top:2px; }
+  .val.good { color:var(--green); } .val.bad { color:var(--red); } .val.pct { color:var(--text); }
+  .section-title { font-family:'Bebas Neue',sans-serif; font-size:0.85rem; letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin:20px 0 10px; padding-left:2px; }
+  .skills-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:8px; max-width:900px; margin:0 auto; }
+  .skill-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:10px; }
+  .skill-icon { font-size:1.2rem; width:28px; text-align:center; flex-shrink:0; }
+  .skill-name { flex:1; font-size:0.88rem; font-weight:500; line-height:1.2; }
+  .skill-counts { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .count-badge { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; width:28px; text-align:center; line-height:1; }
+  .count-badge.good { color:var(--green); } .count-badge.bad { color:var(--red); }
+  .tap-btn { border:none; border-radius:7px; cursor:pointer; font-size:1rem; height:34px; width:34px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tap-btn:active { transform:scale(0.88); }
+  .tap-btn.good { background:rgba(0,230,118,0.12); color:var(--green); } .tap-btn.good:hover { background:rgba(0,230,118,0.22); }
+  .tap-btn.bad  { background:rgba(255,61,87,0.12);  color:var(--red);   } .tap-btn.bad:hover  { background:rgba(255,61,87,0.22); }
+  .mini-bar { width:100%; height:3px; background:var(--border); border-radius:2px; margin-top:6px; overflow:hidden; }
+  .mini-bar-fill { height:100%; border-radius:2px; background:var(--green); transition:width 0.3s ease; }
+  .event-counters { display:flex; justify-content:center; gap:16px; max-width:900px; margin:0 auto 24px; flex-wrap:wrap; }
+  .event-counter { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 20px; text-align:center; min-width:100px; }
+  .event-counter .ec-val { font-family:'Bebas Neue',sans-serif; font-size:2.4rem; line-height:1; color:var(--text); }
+  .event-counter .ec-lbl { font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:4px 0 10px; }
+  .event-counter .ec-btns { display:flex; gap:6px; justify-content:center; }
+  .ec-plus  { background:rgba(0,230,118,0.12); border:none; border-radius:7px; color:var(--green); cursor:pointer; font-size:1.1rem; height:32px; width:32px; }
+  .ec-minus { background:rgba(255,61,87,0.12);  border:none; border-radius:7px; color:var(--red);   cursor:pointer; font-size:1.1rem; height:32px; width:32px; }
+  .ec-plus:hover  { background:rgba(0,230,118,0.25); }
+  .ec-minus:hover { background:rgba(255,61,87,0.25); }
+  .section-wrapper { max-width:900px; margin:0 auto; }
+  .bottom-area { max-width:900px; margin:32px auto 0; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .report-btn { background:var(--green); border:none; border-radius:8px; color:#0d0f14; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; padding:10px 28px; transition:opacity 0.2s; }
+  .report-btn:hover { opacity:0.85; }
+  .reset-btn { background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; padding:10px 28px; transition:all 0.2s; }
+  .reset-btn:hover { border-color:var(--red); color:var(--red); }
+  .confirm-bar { display:none; align-items:center; justify-content:center; gap:12px; }
+  .confirm-bar.visible { display:flex; }
+  .confirm-bar span { font-size:0.85rem; color:var(--muted); }
+  .confirm-yes { background:rgba(255,61,87,0.15); border:1px solid var(--red); border-radius:8px; color:var(--red); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.85rem; padding:6px 18px; }
+  .confirm-no  { background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.85rem; padding:6px 18px; }
+  .confirm-yes:hover { background:rgba(255,61,87,0.3); }
+  .confirm-no:hover  { border-color:var(--text); color:var(--text); }
+
+  /* report modal */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:1000; overflow-y:auto; padding:20px 16px 40px; }
+  .modal-overlay.visible { display:block; }
+  .modal-topbar { display:flex; justify-content:flex-end; max-width:760px; margin:0 auto 12px; }
+  .modal-close-btn { background:transparent; border:1px solid #555; border-radius:8px; color:#ccc; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.85rem; padding:8px 18px; }
+  .modal-close-btn:hover { border-color:#fff; color:#fff; }
+  .rp { background:#fff; color:#1a1a2e; max-width:760px; margin:0 auto; border-radius:16px; padding:36px 36px 44px; font-family:'DM Sans',sans-serif; }
+  .rp h1 { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:3px; color:#1a1f2e; margin:0 0 2px; }
+  .rp-sub { font-size:0.68rem; letter-spacing:2px; text-transform:uppercase; color:#bbb; margin-bottom:22px; }
+  .rp-info { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; background:#f7f7f7; border-radius:12px; padding:14px; margin-bottom:20px; }
+  .rp-info-item .lbl { font-size:0.6rem; letter-spacing:1.5px; text-transform:uppercase; color:#bbb; }
+  .rp-info-item .val { font-size:0.88rem; font-weight:600; color:#1a1a2e; margin-top:2px; }
+  .rp-events { display:flex; gap:10px; margin-bottom:18px; }
+  .rp-ev { flex:1; border-radius:12px; padding:12px; text-align:center; }
+  .rp-ev.goal   { background:#e8f5e9; } .rp-ev.assist { background:#e3f2fd; } .rp-ev.save { background:#fff3e0; }
+  .rp-ev-num { font-family:'Bebas Neue',sans-serif; font-size:2rem; line-height:1; }
+  .rp-ev.goal .rp-ev-num { color:#2e7d32; } .rp-ev.assist .rp-ev-num { color:#1565c0; } .rp-ev.save .rp-ev-num { color:#e65100; }
+  .rp-ev-lbl { font-size:0.62rem; letter-spacing:1.5px; text-transform:uppercase; color:#999; margin-top:3px; }
+  .rp-overall { display:flex; gap:10px; margin-bottom:22px; }
+  .rp-ov { flex:1; background:#f7f7f7; border-radius:12px; padding:12px; text-align:center; }
+  .rp-ov-num { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; line-height:1; }
+  .rp-ov.good .rp-ov-num { color:#2e7d32; } .rp-ov.bad .rp-ov-num { color:#c62828; } .rp-ov.pct .rp-ov-num { color:#1a1f2e; }
+  .rp-ov-lbl { font-size:0.6rem; letter-spacing:1.5px; text-transform:uppercase; color:#bbb; margin-top:3px; }
+  .rp-sec-title { font-size:0.62rem; letter-spacing:2px; text-transform:uppercase; color:#bbb; font-weight:600; padding:14px 0 4px; }
+  .rp-table { width:100%; border-collapse:collapse; }
+  .rp-table th { font-size:0.6rem; letter-spacing:1.5px; text-transform:uppercase; color:#bbb; text-align:left; padding:0 6px 8px; border-bottom:2px solid #f0f0f0; }
+  .rp-table td { padding:8px 6px; border-bottom:1px solid #f5f5f5; font-size:0.83rem; }
+  .sbar { display:flex; align-items:center; gap:8px; }
+  .sbar-bg { flex:1; background:#e8e8e8; border-radius:4px; height:7px; min-width:60px; }
+  .sbar-fill { height:7px; border-radius:4px; }
+</style>
+</head>
+<body>
+
+<header><h1>Player Analysis</h1></header>
+
+<div style="max-width:900px;margin:0 auto">
+  <div class="info-grid">
+    <div class="info-field">
+      <label>Player Name</label>
+      <select id="playerName">
+        <option value="" disabled selected>Select…</option>
+        <option value="Dominik">Dominik</option>
+        <option value="Olek">Olek</option>
+        <option value="__other__">Other…</option>
+      </select>
+      <input type="text" id="playerNameOther" placeholder="Enter name…" style="display:none;margin-top:6px;" />
+    </div>
+    <div class="info-field"><label>Team</label><input type="text" id="playerTeam" placeholder="e.g. FC United" /></div>
+    <div class="info-field"><label>Opponent</label><input type="text" id="playerOpponent" placeholder="e.g. City FC" /></div>
+    <div class="info-field"><label>Location</label><input type="text" id="playerLocation" placeholder="e.g. Lakeside Park" /></div>
+    <div class="info-field"><label>Date</label><input type="date" id="playerDate" /></div>
+    <div class="info-field">
+      <label>Position</label>
+      <select id="playerPosition">
+        <option value="" disabled selected>Select…</option>
+        <optgroup label="Goalkeeper"><option>GK – Goalkeeper</option></optgroup>
+        <optgroup label="Defenders">
+          <option>RB – Right Back</option><option>CB – Centre Back</option><option>LB – Left Back</option>
+          <option>RWB – Right Wing Back</option><option>LWB – Left Wing Back</option>
+        </optgroup>
+        <optgroup label="Midfielders">
+          <option>DM – Defensive Mid</option><option>CM – Central Mid</option><option>AM – Attacking Mid</option>
+          <option>RM – Right Mid</option><option>LM – Left Mid</option>
+        </optgroup>
+        <optgroup label="Forwards">
+          <option>RW – Right Wing</option><option>LW – Left Wing</option>
+          <option>SS – Second Striker</option><option>ST – Striker</option>
+        </optgroup>
+      </select>
+    </div>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-stat"><div class="val good" id="totalGood">0</div><div class="lbl">Good</div></div>
+    <div class="summary-stat"><div class="val bad"  id="totalBad">0</div><div class="lbl">Bad</div></div>
+    <div class="summary-stat"><div class="val pct"  id="totalPct">—</div><div class="lbl">Success %</div></div>
+  </div>
+</div>
+
+<div class="event-counters">
+  <div class="event-counter">
+    <div class="ec-val" id="ec_goal">0</div>
+    <div class="ec-lbl">Goal</div>
+    <div class="ec-btns">
+      <button class="ec-plus"  data-ec="goal">+</button>
+      <button class="ec-minus" data-ec-minus="goal">−</button>
+    </div>
+  </div>
+  <div class="event-counter">
+    <div class="ec-val" id="ec_assist">0</div>
+    <div class="ec-lbl">Assist</div>
+    <div class="ec-btns">
+      <button class="ec-plus"  data-ec="assist">+</button>
+      <button class="ec-minus" data-ec-minus="assist">−</button>
+    </div>
+  </div>
+  <div class="event-counter">
+    <div class="ec-val" id="ec_save">0</div>
+    <div class="ec-lbl">Save</div>
+    <div class="ec-btns">
+      <button class="ec-plus"  data-ec="save">+</button>
+      <button class="ec-minus" data-ec-minus="save">−</button>
+    </div>
+  </div>
+</div>
+
+<div class="section-wrapper" id="skillsContainer"></div>
+
+<div class="bottom-area">
+  <button class="report-btn" id="reportBtn">📋 Generate Report</button>
+  <button class="reset-btn"  id="resetBtn">↺ Reset All</button>
+  <div class="confirm-bar" id="confirmBar">
+    <span>Clear all data?</span>
+    <button class="confirm-yes" id="confirmYes">Yes, reset</button>
+    <button class="confirm-no"  id="confirmNo">Cancel</button>
+  </div>
+</div>
+
+<!-- Report modal -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal-topbar">
+    <button class="modal-close-btn" id="reportClose">✕ Close</button>
+  </div>
+  <div class="rp" id="reportContent"></div>
+</div>
+
+<script>
+(function() {
+
+var SKILLS = [
+  { section: "🦶 Technical", items: [
+    { id:"first_touch",  icon:"🎯", name:"First Touch" },
+    { id:"passing",      icon:"➡️", name:"Passing" },
+    { id:"long_pass",    icon:"📐", name:"Long Pass" },
+    { id:"through_ball", icon:"🔓", name:"Through Ball" },
+    { id:"crossing",     icon:"🌐", name:"Crossing" },
+    { id:"shooting",     icon:"⚡", name:"Shooting" },
+    { id:"dribbling",    icon:"🌀", name:"Dribbling" },
+    { id:"heading",      icon:"🔝", name:"Heading" },
+    { id:"set_piece",    icon:"🎯", name:"Set Piece" }
+  ]},
+  { section: "🛡 Defending", items: [
+    { id:"tackle",       icon:"💥", name:"Tackle" },
+    { id:"interception", icon:"✋", name:"Interception" },
+    { id:"aerial_duel",  icon:"⬆️", name:"Aerial Duel" },
+    { id:"press",        icon:"🔥", name:"Press / Close Down" },
+    { id:"block",        icon:"🧱", name:"Block" }
+  ]},
+  { section: "🧠 Decision Making", items: [
+    { id:"decision",     icon:"💡", name:"Decision Making" },
+    { id:"movement",     icon:"🏃", name:"Off-Ball Movement" },
+    { id:"support",      icon:"🤝", name:"Supporting Run" },
+    { id:"positioning",  icon:"📍", name:"Positioning" },
+    { id:"transition",   icon:"🔄", name:"Transition" }
+  ]}
+];
+
+var counts = {};
+SKILLS.forEach(function(s) {
+  s.items.forEach(function(i) { counts[i.id] = { good:0, bad:0 }; });
+});
+
+var ecCounts = { goal:0, assist:0, save:0 };
+
+var TEAM_MAP = { Dominik:"Dandy City", Olek:"Bentleigh" };
+
+/* ---- helpers ---- */
+function updateCounts(id) {
+  var c = counts[id];
+  var total = c.good + c.bad;
+  var pct = total > 0 ? Math.round(c.good / total * 100) : 0;
+  document.getElementById('g_' + id).textContent = c.good;
+  document.getElementById('b_' + id).textContent = c.bad;
+  document.getElementById('bar_' + id).style.width = (total > 0 ? pct : 0) + '%';
+}
+
+function updateTotals() {
+  var g = 0, b = 0;
+  Object.keys(counts).forEach(function(k) { g += counts[k].good; b += counts[k].bad; });
+  document.getElementById('totalGood').textContent = g;
+  document.getElementById('totalBad').textContent  = b;
+  var tot = g + b;
+  document.getElementById('totalPct').textContent  = tot > 0 ? Math.round(g/tot*100) + '%' : '—';
+}
+
+function updateEC(id) {
+  document.getElementById('ec_' + id).textContent = ecCounts[id];
+}
+
+function getPlayerName() {
+  var sel = document.getElementById('playerName');
+  if (sel.value === '__other__') return document.getElementById('playerNameOther').value || 'Unknown';
+  return sel.value || 'Unknown';
+}
+
+/* ---- build skill cards ---- */
+var container = document.getElementById('skillsContainer');
+SKILLS.forEach(function(section) {
+  var title = document.createElement('div');
+  title.className = 'section-title';
+  title.textContent = section.section;
+  container.appendChild(title);
+
+  var grid = document.createElement('div');
+  grid.className = 'skills-grid';
+
+  section.items.forEach(function(skill) {
+    var card = document.createElement('div');
+    card.className = 'skill-card';
+    card.innerHTML =
+      '<div class="skill-icon">' + skill.icon + '</div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="skill-name">' + skill.name + '</div>' +
+        '<div class="mini-bar"><div class="mini-bar-fill" id="bar_' + skill.id + '" style="width:0%"></div></div>' +
+      '</div>' +
+      '<div class="skill-counts">' +
+        '<span class="count-badge good" id="g_' + skill.id + '">0</span>' +
+        '<button class="tap-btn good" data-id="' + skill.id + '" data-type="good">✓</button>' +
+        '<button class="tap-btn bad"  data-id="' + skill.id + '" data-type="bad">✗</button>' +
+        '<span class="count-badge bad"  id="b_' + skill.id + '">0</span>' +
+      '</div>';
+    grid.appendChild(card);
+  });
+  container.appendChild(grid);
+});
+
+/* ---- event listeners ---- */
+
+// skill tap
+container.addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-type]');
+  if (!btn) return;
+  counts[btn.getAttribute('data-id')][btn.getAttribute('data-type')]++;
+  updateCounts(btn.getAttribute('data-id'));
+  updateTotals();
+});
+
+// goal/assist/save
+document.querySelector('.event-counters').addEventListener('click', function(e) {
+  var plus  = e.target.closest('[data-ec]');
+  var minus = e.target.closest('[data-ec-minus]');
+  if (plus)  { var k = plus.getAttribute('data-ec');       ecCounts[k]++;                        updateEC(k); }
+  if (minus) { var k = minus.getAttribute('data-ec-minus'); if (ecCounts[k]>0) ecCounts[k]--;    updateEC(k); }
+});
+
+// player name
+document.getElementById('playerName').addEventListener('change', function() {
+  var other = document.getElementById('playerNameOther');
+  var team  = document.getElementById('playerTeam');
+  if (this.value === '__other__') {
+    other.style.display = 'block'; other.focus(); team.value = '';
+  } else {
+    other.style.display = 'none'; other.value = '';
+    team.value = TEAM_MAP[this.value] || '';
+  }
+});
+
+// report
+document.getElementById('reportBtn').addEventListener('click', function() {
+  var name     = getPlayerName();
+  var team     = document.getElementById('playerTeam').value     || '—';
+  var opponent = document.getElementById('playerOpponent').value || '—';
+  var location = document.getElementById('playerLocation').value || '—';
+  var date     = document.getElementById('playerDate').value     || '—';
+  var position = document.getElementById('playerPosition').value || '—';
+
+  var totalG = 0, totalB = 0;
+  Object.keys(counts).forEach(function(k) { totalG += counts[k].good; totalB += counts[k].bad; });
+  var totalAll = totalG + totalB;
+  var overallPct = totalAll > 0 ? Math.round(totalG / totalAll * 100) + '%' : '—';
+
+  var tableRows = '';
+  SKILLS.forEach(function(section) {
+    var rows = '';
+    section.items.forEach(function(skill) {
+      var c = counts[skill.id];
+      var tot = c.good + c.bad;
+      if (tot === 0) return;
+      var pct = Math.round(c.good / tot * 100);
+      var col = pct >= 70 ? '#2e7d32' : pct >= 40 ? '#f57f17' : '#c62828';
+      rows +=
+        '<tr>' +
+        '<td>' + skill.name + '</td>' +
+        '<td style="color:#2e7d32;font-weight:600">' + c.good + '</td>' +
+        '<td style="color:#c62828;font-weight:600">' + c.bad + '</td>' +
+        '<td>' + tot + '</td>' +
+        '<td><div class="sbar"><div class="sbar-bg"><div class="sbar-fill" style="width:' + pct + '%;background:' + col + '"></div></div>' +
+        '<span style="font-weight:600;color:' + col + ';min-width:34px">' + pct + '%</span></div></td>' +
+        '</tr>';
+    });
+    if (!rows) return;
+    tableRows += '<tr><td colspan="5" class="rp-sec-title">' + section.section + '</td></tr>' + rows;
+  });
+
+  document.getElementById('reportContent').innerHTML =
+    '<h1>Player Report</h1>' +
+    '<div class="rp-sub">Individual Performance Analysis</div>' +
+    '<div class="rp-info">' +
+      '<div class="rp-info-item"><div class="lbl">Player</div><div class="val">'   + name     + '</div></div>' +
+      '<div class="rp-info-item"><div class="lbl">Team</div><div class="val">'     + team     + '</div></div>' +
+      '<div class="rp-info-item"><div class="lbl">Opponent</div><div class="val">' + opponent + '</div></div>' +
+      '<div class="rp-info-item"><div class="lbl">Location</div><div class="val">' + location + '</div></div>' +
+      '<div class="rp-info-item"><div class="lbl">Date</div><div class="val">'     + date     + '</div></div>' +
+      '<div class="rp-info-item"><div class="lbl">Position</div><div class="val">' + position + '</div></div>' +
+    '</div>' +
+    '<div class="rp-events">' +
+      '<div class="rp-ev goal"><div class="rp-ev-num">'   + ecCounts.goal   + '</div><div class="rp-ev-lbl">Goals</div></div>' +
+      '<div class="rp-ev assist"><div class="rp-ev-num">' + ecCounts.assist + '</div><div class="rp-ev-lbl">Assists</div></div>' +
+      '<div class="rp-ev save"><div class="rp-ev-num">'   + ecCounts.save   + '</div><div class="rp-ev-lbl">Saves</div></div>' +
+    '</div>' +
+    '<div class="rp-overall">' +
+      '<div class="rp-ov good"><div class="rp-ov-num">' + totalG     + '</div><div class="rp-ov-lbl">Good Actions</div></div>' +
+      '<div class="rp-ov bad"><div class="rp-ov-num">'  + totalB     + '</div><div class="rp-ov-lbl">Bad Actions</div></div>' +
+      '<div class="rp-ov pct"><div class="rp-ov-num">'  + overallPct + '</div><div class="rp-ov-lbl">Success Rate</div></div>' +
+    '</div>' +
+    (tableRows
+      ? '<table class="rp-table"><thead><tr><th>Skill</th><th>Good</th><th>Bad</th><th>Total</th><th>Success</th></tr></thead><tbody>' + tableRows + '</tbody></table>'
+      : '<p style="color:#bbb;text-align:center;padding:32px">No skill data recorded yet.</p>');
+
+  document.getElementById('reportModal').classList.add('visible');
+});
+
+// close report
+document.getElementById('reportClose').addEventListener('click', function() {
+  document.getElementById('reportModal').classList.remove('visible');
+});
+
+// reset
+document.getElementById('resetBtn').addEventListener('click', function() {
+  document.getElementById('confirmBar').classList.toggle('visible');
+});
+document.getElementById('confirmYes').addEventListener('click', function() {
+  Object.keys(counts).forEach(function(k) { counts[k] = { good:0, bad:0 }; });
+  Object.keys(ecCounts).forEach(function(k) { ecCounts[k] = 0; updateEC(k); });
+  document.getElementById('playerName').selectedIndex = 0;
+  document.getElementById('playerNameOther').style.display = 'none';
+  document.getElementById('playerNameOther').value = '';
+  ['playerTeam','playerOpponent','playerLocation'].forEach(function(id) { document.getElementById(id).value = ''; });
+  document.getElementById('playerDate').valueAsDate = new Date();
+  document.getElementById('playerPosition').selectedIndex = 0;
+  Object.keys(counts).forEach(function(id) { updateCounts(id); });
+  updateTotals();
+  document.getElementById('confirmBar').classList.remove('visible');
+});
+document.getElementById('confirmNo').addEventListener('click', function() {
+  document.getElementById('confirmBar').classList.remove('visible');
+});
+
+// init
+document.getElementById('playerDate').valueAsDate = new Date();
+
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+</script>
+</body>
+</html>
