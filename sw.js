@@ -1,4 +1,4 @@
-var CACHE = 'player-analysis-v2';
+var CACHE = 'player-analysis-v4';
 var ASSETS = [
   './index.html',
   './manifest.json'
