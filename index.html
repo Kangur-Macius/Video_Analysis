@@ -55,10 +55,13 @@
   .ec-minus:hover { background:rgba(255,61,87,0.25); }
   .section-wrapper { max-width:900px; margin:0 auto; }
   .bottom-area { max-width:900px; margin:32px auto 0; display:flex; flex-direction:column; align-items:center; gap:12px; }
-  .report-btn { background:var(--green); border:none; border-radius:8px; color:#0d0f14; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; padding:10px 28px; transition:opacity 0.2s; }
+  .report-btn { background:var(--green); border:none; border-radius:8px; color:#0d0f14; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; padding:10px 28px; transition:opacity 0.2s; width:200px; }
   .report-btn:hover { opacity:0.85; }
-  .reset-btn { background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; padding:10px 28px; transition:all 0.2s; }
-  .reset-btn:hover { border-color:var(--red); color:var(--red); }
+  .reset-btn { background:var(--red); border:none; border-radius:8px; color:#fff; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; padding:10px 28px; transition:opacity 0.2s; width:200px; }
+  .reset-btn:hover { opacity:0.85; }
+  .undo-btn { background:#ff5722; border:none; border-radius:8px; color:#0d0f14; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; padding:10px 28px; transition:all 0.2s; width:200px; }
+  .undo-btn:hover:not(:disabled) { opacity:0.85; }
+  .undo-btn:disabled { background:#2a2f3e; color:#4a5068; cursor:default; }
   .confirm-bar { display:none; align-items:center; justify-content:center; gap:12px; }
   .confirm-bar.visible { display:flex; }
   .confirm-bar span { font-size:0.85rem; color:var(--muted); }
@@ -177,8 +180,9 @@
 <div class="section-wrapper" id="skillsContainer"></div>
 
 <div class="bottom-area">
+  <button class="undo-btn" id="undoBtn" disabled>↩ Undo Last</button>
+  <button class="reset-btn" id="resetBtn">↺ Reset All</button>
   <button class="report-btn" id="reportBtn">📋 Generate Report</button>
-  <button class="reset-btn"  id="resetBtn">↺ Reset All</button>
   <div class="confirm-bar" id="confirmBar">
     <span>Clear all data?</span>
     <button class="confirm-yes" id="confirmYes">Yes, reset</button>
@@ -200,21 +204,21 @@
 var SKILLS = [
   { section: "🦶 Technical", items: [
     { id:"first_touch",  icon:"🎯", name:"First Touch" },
-    { id:"passing",      icon:"➡️", name:"Passing" },
+    { id:"passing",      icon:"➡️", name:"Short Pass" },
     { id:"long_pass",    icon:"📐", name:"Long Pass" },
     { id:"through_ball", icon:"🔓", name:"Through Ball" },
     { id:"crossing",     icon:"🌐", name:"Crossing" },
     { id:"shooting",     icon:"⚡", name:"Shooting" },
     { id:"dribbling",    icon:"🌀", name:"Dribbling" },
-    { id:"heading",      icon:"🔝", name:"Heading" },
-    { id:"set_piece",    icon:"🎯", name:"Set Piece" }
+    { id:"heading",      icon:"🔝", name:"Heading" }
   ]},
   { section: "🛡 Defending", items: [
     { id:"tackle",       icon:"💥", name:"Tackle" },
     { id:"interception", icon:"✋", name:"Interception" },
     { id:"aerial_duel",  icon:"⬆️", name:"Aerial Duel" },
     { id:"press",        icon:"🔥", name:"Press / Close Down" },
-    { id:"block",        icon:"🧱", name:"Block" }
+    { id:"block",        icon:"🧱", name:"Block" },
+    { id:"body_pressure", icon:"💪", name:"Body Pressure" }
   ]},
   { section: "🧠 Decision Making", items: [
     { id:"decision",     icon:"💡", name:"Decision Making" },
@@ -231,6 +235,8 @@ SKILLS.forEach(function(s) {
 });
 
 var ecCounts = { goal:0, assist:0, save:0 };
+
+var lastAction = null;
 
 var TEAM_MAP = { Dominik:"Dandy City", Olek:"Bentleigh" };
 
@@ -300,8 +306,12 @@ SKILLS.forEach(function(section) {
 container.addEventListener('click', function(e) {
   var btn = e.target.closest('[data-type]');
   if (!btn) return;
-  counts[btn.getAttribute('data-id')][btn.getAttribute('data-type')]++;
-  updateCounts(btn.getAttribute('data-id'));
+  var tid = btn.getAttribute('data-id');
+  var ttype = btn.getAttribute('data-type');
+  counts[tid][ttype]++;
+  lastAction = { kind:'skill', id:tid, type:ttype };
+  document.getElementById('undoBtn').disabled = false;
+  updateCounts(tid);
   updateTotals();
 });
 
@@ -309,8 +319,8 @@ container.addEventListener('click', function(e) {
 document.querySelector('.event-counters').addEventListener('click', function(e) {
   var plus  = e.target.closest('[data-ec]');
   var minus = e.target.closest('[data-ec-minus]');
-  if (plus)  { var k = plus.getAttribute('data-ec');       ecCounts[k]++;                        updateEC(k); }
-  if (minus) { var k = minus.getAttribute('data-ec-minus'); if (ecCounts[k]>0) ecCounts[k]--;    updateEC(k); }
+  if (plus)  { var k = plus.getAttribute('data-ec');       ecCounts[k]++; lastAction = { kind:'ec', id:k, type:'plus' };  document.getElementById('undoBtn').disabled = false; updateEC(k); }
+  if (minus) { var k = minus.getAttribute('data-ec-minus'); if (ecCounts[k]>0) { ecCounts[k]--; lastAction = { kind:'ec', id:k, type:'minus' }; document.getElementById('undoBtn').disabled = false; } updateEC(k); }
 });
 
 // player name
@@ -395,6 +405,28 @@ document.getElementById('reportClose').addEventListener('click', function() {
   document.getElementById('reportModal').classList.remove('visible');
 });
 
+// undo
+document.getElementById('undoBtn').addEventListener('click', function() {
+  if (!lastAction) return;
+  if (lastAction.kind === 'skill') {
+    if (counts[lastAction.id][lastAction.type] > 0) {
+      counts[lastAction.id][lastAction.type]--;
+      updateCounts(lastAction.id);
+      updateTotals();
+    }
+  } else if (lastAction.kind === 'ec') {
+    if (lastAction.type === 'plus' && ecCounts[lastAction.id] > 0) {
+      ecCounts[lastAction.id]--;
+      updateEC(lastAction.id);
+    } else if (lastAction.type === 'minus') {
+      ecCounts[lastAction.id]++;
+      updateEC(lastAction.id);
+    }
+  }
+  lastAction = null;
+  document.getElementById('undoBtn').disabled = true;
+});
+
 // reset
 document.getElementById('resetBtn').addEventListener('click', function() {
   document.getElementById('confirmBar').classList.toggle('visible');
@@ -410,9 +442,13 @@ document.getElementById('confirmYes').addEventListener('click', function() {
   document.getElementById('playerPosition').selectedIndex = 0;
   Object.keys(counts).forEach(function(id) { updateCounts(id); });
   updateTotals();
+  lastAction = null;
+  document.getElementById('undoBtn').disabled = true;
   document.getElementById('confirmBar').classList.remove('visible');
 });
 document.getElementById('confirmNo').addEventListener('click', function() {
+  lastAction = null;
+  document.getElementById('undoBtn').disabled = true;
   document.getElementById('confirmBar').classList.remove('visible');
 });
 
