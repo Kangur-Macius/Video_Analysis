@@ -1,483 +1,603 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0d0f14">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Player Analysis">
-  <link rel="apple-touch-icon" href="icon-192.png">
-<title>Player Analysis</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#C8102E" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" type="image/png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<title>Match Day Analysis</title>
 <style>
-  :root { --green:#00e676; --red:#ff3d57; --bg:#0d0f14; --card:#161a22; --border:#252b38; --text:#e8ecf4; --muted:#5a6280; }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; padding:20px 16px 40px; }
-  header { text-align:center; margin-bottom:20px; }
-  header h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(2rem,8vw,3.2rem); letter-spacing:3px; color:#1a1f2e; -webkit-text-stroke:1.5px #e8ecf4; line-height:1; }
-  .info-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; max-width:900px; margin:0 auto 20px; }
-  .info-field { display:flex; flex-direction:column; gap:4px; }
-  .info-field label { font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
-  .info-field input, .info-field select { background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.9rem; padding:8px 12px; outline:none; width:100%; min-width:0; }
-  .info-field input[type="date"] { appearance:none; -webkit-appearance:none; color-scheme:dark; }
-  .info-field input:focus, .info-field select:focus { border-color:var(--green); }
-  .info-field select option { background:#1e2330; }
-  .summary-bar { display:flex; justify-content:center; gap:24px; margin-bottom:28px; flex-wrap:wrap; }
-  .summary-stat { text-align:center; }
-  .summary-stat .val { font-family:'Bebas Neue',sans-serif; font-size:2rem; line-height:1; }
-  .summary-stat .lbl { font-size:0.7rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-top:2px; }
-  .val.good { color:var(--green); } .val.bad { color:var(--red); } .val.pct { color:var(--text); }
-  .section-title { font-family:'Bebas Neue',sans-serif; font-size:0.85rem; letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin:20px 0 10px; padding-left:2px; }
-  .skills-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:8px; max-width:900px; margin:0 auto; }
-  .skill-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:10px; }
-  .skill-icon { font-size:1.2rem; width:28px; text-align:center; flex-shrink:0; }
-  .skill-name { flex:1; font-size:0.88rem; font-weight:500; line-height:1.2; }
-  .skill-counts { display:flex; align-items:center; gap:6px; flex-shrink:0; }
-  .count-badge { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; width:28px; text-align:center; line-height:1; }
-  .count-badge.good { color:var(--green); } .count-badge.bad { color:var(--red); }
-  .tap-btn { border:none; border-radius:7px; cursor:pointer; font-size:1rem; height:34px; width:34px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .tap-btn:active { transform:scale(0.88); }
-  .tap-btn.good { background:rgba(0,230,118,0.12); color:var(--green); } .tap-btn.good:hover { background:rgba(0,230,118,0.22); }
-  .tap-btn.bad  { background:rgba(255,61,87,0.12);  color:var(--red);   } .tap-btn.bad:hover  { background:rgba(255,61,87,0.22); }
-  .mini-bar { width:100%; height:3px; background:var(--border); border-radius:2px; margin-top:6px; overflow:hidden; }
-  .mini-bar-fill { height:100%; border-radius:2px; background:var(--green); transition:width 0.3s ease; }
-  .event-counters { display:flex; justify-content:center; gap:16px; max-width:900px; margin:0 auto 24px; flex-wrap:wrap; }
-  .event-counter { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 20px; text-align:center; min-width:100px; }
-  .event-counter .ec-val { font-family:'Bebas Neue',sans-serif; font-size:2.4rem; line-height:1; color:var(--text); }
-  .event-counter .ec-lbl { font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:4px 0 10px; }
-  .event-counter .ec-btns { display:flex; gap:6px; justify-content:center; }
-  .ec-plus  { background:rgba(0,230,118,0.12); border:none; border-radius:7px; color:var(--green); cursor:pointer; font-size:1.1rem; height:32px; width:32px; }
-  .ec-minus { background:rgba(255,61,87,0.12);  border:none; border-radius:7px; color:var(--red);   cursor:pointer; font-size:1.1rem; height:32px; width:32px; }
-  .ec-plus:hover  { background:rgba(0,230,118,0.25); }
-  .ec-minus:hover { background:rgba(255,61,87,0.25); }
-  .section-wrapper { max-width:900px; margin:0 auto; }
-  .bottom-area { max-width:900px; margin:32px auto 0; display:flex; flex-direction:column; align-items:center; gap:12px; }
-  .report-btn { background:var(--green); border:none; border-radius:8px; color:#0d0f14; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; padding:10px 28px; transition:opacity 0.2s; width:200px; }
-  .report-btn:hover { opacity:0.85; }
-  .reset-btn { background:var(--red); border:none; border-radius:8px; color:#fff; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; padding:10px 28px; transition:opacity 0.2s; width:200px; }
-  .reset-btn:hover { opacity:0.85; }
-  .undo-btn { background:#ff5722; border:none; border-radius:8px; color:#0d0f14; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600; padding:10px 28px; transition:all 0.2s; width:200px; }
-  .undo-btn:hover:not(:disabled) { opacity:0.85; }
-  .undo-btn:disabled { background:#2a2f3e; color:#4a5068; cursor:default; }
-  .confirm-bar { display:none; align-items:center; justify-content:center; gap:12px; }
-  .confirm-bar.visible { display:flex; }
-  .confirm-bar span { font-size:0.85rem; color:var(--muted); }
-  .confirm-yes { background:rgba(255,61,87,0.15); border:1px solid var(--red); border-radius:8px; color:var(--red); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.85rem; padding:6px 18px; }
-  .confirm-no  { background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.85rem; padding:6px 18px; }
-  .confirm-yes:hover { background:rgba(255,61,87,0.3); }
-  .confirm-no:hover  { border-color:var(--text); color:var(--text); }
+  :root { -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #FFFFFF;
+    font-family: Verdana, Geneva, sans-serif;
+    -webkit-user-select: none; user-select: none;
+  }
+  input, select, button { -webkit-user-select: auto; user-select: auto; }
+  .mda-display { font-family: Verdana, Geneva, sans-serif; }
 
-  /* report modal */
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:1000; overflow-y:scroll; -webkit-overflow-scrolling:touch; padding:20px 16px 60px; }
-  .modal-overlay.visible { display:block; }
-  .modal-topbar { display:flex; justify-content:space-between; max-width:760px; margin:0 auto 12px; gap:10px; }
-  .modal-close-btn { background:transparent; border:1px solid #555; border-radius:8px; color:#ccc; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.85rem; padding:8px 18px; }
-  .modal-close-btn:hover { border-color:#fff; color:#fff; }
-  .rp { background:#fff; color:#1a1a2e; max-width:760px; margin:0 auto; border-radius:16px; padding:36px 36px 60px; font-family:'DM Sans',sans-serif; overflow:visible; }
-  .rp h1 { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:3px; color:#1a1f2e; margin:0 0 2px; }
-  .rp-sub { font-size:0.68rem; letter-spacing:2px; text-transform:uppercase; color:#bbb; margin-bottom:22px; }
-  .rp-info { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; background:#f7f7f7; border-radius:12px; padding:14px; margin-bottom:20px; }
-  .rp-info-item .lbl { font-size:0.6rem; letter-spacing:1.5px; text-transform:uppercase; color:#bbb; }
-  .rp-info-item .val { font-size:0.88rem; font-weight:600; color:#1a1a2e; margin-top:2px; }
-  .rp-events { display:flex; gap:10px; margin-bottom:18px; }
-  .rp-ev { flex:1; border-radius:12px; padding:12px; text-align:center; }
-  .rp-ev.goal   { background:#e8f5e9; } .rp-ev.assist { background:#e3f2fd; } .rp-ev.save { background:#fff3e0; }
-  .rp-ev-num { font-family:'Bebas Neue',sans-serif; font-size:2rem; line-height:1; }
-  .rp-ev.goal .rp-ev-num { color:#2e7d32; } .rp-ev.assist .rp-ev-num { color:#1565c0; } .rp-ev.save .rp-ev-num { color:#e65100; }
-  .rp-ev-lbl { font-size:0.62rem; letter-spacing:1.5px; text-transform:uppercase; color:#999; margin-top:3px; }
-  .rp-overall { display:flex; gap:10px; margin-bottom:22px; }
-  .rp-ov { flex:1; background:#f7f7f7; border-radius:12px; padding:12px; text-align:center; }
-  .rp-ov-num { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; line-height:1; }
-  .rp-ov.good .rp-ov-num { color:#2e7d32; } .rp-ov.bad .rp-ov-num { color:#c62828; } .rp-ov.pct .rp-ov-num { color:#1a1f2e; }
-  .rp-ov-lbl { font-size:0.6rem; letter-spacing:1.5px; text-transform:uppercase; color:#bbb; margin-top:3px; }
-  .rp-sec-title { font-size:0.62rem; letter-spacing:2px; text-transform:uppercase; color:#bbb; font-weight:600; padding:14px 0 4px; }
-  .rp-table { width:100%; border-collapse:collapse; }
-  .rp-table th { font-size:0.6rem; letter-spacing:1.5px; text-transform:uppercase; color:#bbb; text-align:left; padding:0 6px 8px; border-bottom:2px solid #f0f0f0; }
-  .rp-table td { padding:8px 6px; border-bottom:1px solid #f5f5f5; font-size:0.83rem; }
-  .sbar { display:flex; align-items:center; gap:8px; }
-  .sbar-bg { flex:1; background:#e8e8e8; border-radius:4px; height:7px; min-width:60px; }
-  .sbar-fill { height:7px; border-radius:4px; }
+  .mda-header { background: #C8102E; position: relative; padding: 28px 0 14px; }
+  .mda-header-inner { padding: 0 24px; }
+  .mda-header h1 { color: #FFFFFF; font-size: 34px; font-weight: 900; letter-spacing: 0.01em; margin: 0; }
+  .mda-stripes { display: flex; flex-direction: column; gap: 2px; margin-top: 16px; }
+  .mda-stripe { height: 1.5px; background: #FFFFFF; }
 
-  @media print {
-    body.printing > *:not(#reportModal) { display:none !important; }
-    body.printing #reportModal { display:block !important; position:static !important; background:#fff !important; padding:0 !important; }
-    body.printing .modal-topbar { display:none !important; }
-    body.printing .rp { box-shadow:none !important; border-radius:0 !important; max-width:100% !important; padding:20px !important; }
-    body { background:#fff !important; }
+  .mda-card { background: #0B231A; border: 1px solid #FFFFFF; border-radius: 16px; padding: 28px; max-width: 640px; margin: -16px auto 0; box-shadow: 0 20px 50px -20px rgba(0,0,0,0.6); }
+  .mda-label { display: block; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #8A9B8E; font-weight: 700; margin-bottom: 8px; }
+  .mda-field-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  .mda-input, .mda-select {
+    width: 100%; background: #0F2B22; border: 1px solid #2C5240; border-radius: 6px;
+    padding: 14px 16px; color: #F8F7F2; font-size: 16px; font-family: inherit;
+  }
+  .mda-select { appearance: none; -webkit-appearance: none; }
+  .mda-input::placeholder { color: #5C7567; }
+  .mda-input:focus, .mda-select:focus { outline: none; border-color: #E8A33D; box-shadow: 0 0 0 2px #E8A33D; }
+  .mda-date-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .mda-time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 200px; }
+  .mda-error { color: #E8A33D; font-size: 12px; margin-top: 6px; }
+  .mda-option {
+    text-align: left; border-radius: 12px; border: 2px solid #23472F; background: #0F2B22;
+    padding: 20px; cursor: pointer; transition: border-color 0.15s, background 0.15s; font-family: inherit;
+    width: 100%; display: block;
+  }
+  .mda-option:hover { border-color: #3C6B4D; }
+  .mda-option.selected { border-color: #E8A33D; background: #1A3A28; }
+  .mda-opt-icon { font-size: 22px; filter: grayscale(0.6) opacity(0.7); }
+  .mda-option.selected .mda-opt-icon { filter: none; }
+  .mda-option-title { color: #F8F7F2; font-size: 18px; font-weight: 700; margin-top: 12px; }
+  .mda-option-desc { color: #8A9B8E; font-size: 12px; margin-top: 4px; line-height: 1.5; }
+  .mda-btn-primary {
+    width: 100%; background: #E8A33D; color: #142318; font-weight: 700; padding: 16px;
+    border-radius: 6px; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    border: none; cursor: pointer; transition: background 0.15s; margin-top: 32px;
+  }
+  .mda-btn-primary:hover { background: #F0B158; }
+  .mda-strip { background: #C8102E; padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+  .mda-back { display: flex; align-items: center; gap: 4px; color: #1A1A1A; font-size: 14px; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+  .mda-back-light { color: #FFFFFF; opacity: 0.85; }
+  .mda-divider { height: 20px; width: 1px; background: #FFFFFF; opacity: 0.3; }
+  .mda-strip-title { color: #FFFFFF; font-size: 18px; font-weight: 700; }
+  .mda-strip-meta { margin-left: auto; display: flex; align-items: center; gap: 16px; color: #FFFFFF; opacity: 0.85; font-size: 12px; font-family: Verdana, Geneva, sans-serif; }
+
+  .mda-tracker { padding: 20px; max-width: 720px; margin: 0 auto; width: 100%; }
+  .mda-player-form { background: #0B231A; border: 1px solid #23472F; border-radius: 16px; padding: 24px; margin-top: 8px; }
+  .mda-player-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .mda-minute-bar { display: flex; align-items: center; justify-content: space-around; background: #0B231A; border: 1px solid #23472F; border-radius: 12px; padding: 12px 18px; margin: 16px 0; gap: 12px; }
+  .mda-time-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .mda-time-divider { width: 1px; align-self: stretch; background: #23472F; }
+  .mda-minute-label { color: #8A9B8E; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
+  .mda-minute-value { color: #F8F7F2; font-size: 26px; font-weight: 700; min-width: 56px; text-align: center; }
+  .mda-minute-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #2C5240; background: #0F2B22; color: #F8F7F2; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .mda-group-title { color: #000000; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; margin: 20px 0 10px; }
+  .mda-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+  .mda-btn-row.single { grid-template-columns: 1fr; }
+  .mda-event-btn {
+    padding: 14px 10px; border-radius: 10px; border: 1px solid #23472F; background: #0B231A;
+    color: #F8F7F2; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+    width: 100%;
+  }
+  .mda-event-btn:active { transform: scale(0.97); }
+  .mda-event-btn.positive { border-color: #2E7D4F; }
+  .mda-event-btn.negative { border-color: #A13328; }
+  .mda-event-btn.neutral:hover { border-color: #E8A33D; }
+  .mda-log { margin-top: 28px; }
+  .mda-log-empty { color: #1A1A1A; font-size: 13px; text-align: center; padding: 24px 0; }
+  .mda-log-item { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid #23472F; }
+  .mda-log-minute { color: #C8102E; font-family: Verdana, Geneva, sans-serif; font-size: 13px; min-width: 52px; font-weight: 700; }
+  .mda-log-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .mda-log-label { color: #1A1A1A; font-size: 14px; flex: 1; }
+  .mda-log-del { background: none; border: none; color: #8A8A8A; cursor: pointer; font-size: 16px; padding: 4px 8px; }
+  .mda-player-chip { display: flex; align-items: center; gap: 8px; color: #1A1A1A; font-size: 14px; }
+  .mda-player-chip span.pos { color: #6B6B6B; }
+
+  .mda-finish-btn {
+    width: 100%; background: #1A1A1A; color: #FFFFFF; font-weight: 700; padding: 15px;
+    border-radius: 10px; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    border: none; cursor: pointer; margin-top: 28px;
+  }
+  .mda-report-header { padding: 4px 0 20px; }
+  .mda-report-title { font-size: 22px; font-weight: 700; color: #1A1A1A; margin: 0; }
+  .mda-report-sub { color: #6B6B6B; font-size: 13px; margin-top: 4px; }
+  .mda-report-card { background: #FFFFFF; border: 1px solid #23472F; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  .mda-report-group-title { color: #C8102E; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; margin: 0 0 12px; }
+  .mda-stat-row { margin-bottom: 14px; }
+  .mda-stat-row:last-child { margin-bottom: 0; }
+  .mda-stat-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .mda-stat-name { color: #1A1A1A; font-size: 14px; font-weight: 600; }
+  .mda-stat-figure { color: #1A1A1A; font-size: 13px; font-family: Verdana, Geneva, sans-serif; }
+  .mda-stat-figure b { color: #C8102E; }
+  .mda-bar-track { height: 6px; border-radius: 3px; background: #EDEDED; overflow: hidden; }
+  .mda-bar-fill { height: 100%; background: #C8102E; border-radius: 3px; }
+  .mda-report-empty { color: #6B6B6B; font-size: 13px; text-align: center; padding: 16px 0; }
+  .mda-report-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .mda-report-btn {
+    padding: 14px; border-radius: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; cursor: pointer; border: 1px solid #23472F; background: #FFFFFF; color: #1A1A1A; width: 100%;
+  }
+  .mda-report-btn.primary { background: #C8102E; border-color: #C8102E; color: #FFFFFF; }
+
+  @media (min-width: 640px) {
+    .mda-header { padding: 36px 0 18px; }
+    .mda-header-inner { padding: 0 40px; }
+    .mda-header h1 { font-size: 48px; }
+    .mda-card { padding: 32px; }
+    .mda-field-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
 <body>
-
-<header><h1>Player Analysis</h1></header>
-
-<div style="max-width:900px;margin:0 auto">
-  <div class="info-grid">
-    <div class="info-field">
-      <label>Player Name</label>
-      <select id="playerName">
-        <option value="" disabled selected>Select…</option>
-        <option value="Dominik">Dominik</option>
-        <option value="Olek">Olek</option>
-        <option value="__other__">Other…</option>
-      </select>
-      <input type="text" id="playerNameOther" placeholder="Enter name…" style="display:none;margin-top:6px;" />
-    </div>
-    <div class="info-field"><label>Team</label><input type="text" id="playerTeam" placeholder="e.g. FC United" /></div>
-    <div class="info-field"><label>Opponent</label><input type="text" id="playerOpponent" placeholder="e.g. City FC" /></div>
-    <div class="info-field"><label>Location</label><input type="text" id="playerLocation" placeholder="e.g. Lakeside Park" /></div>
-    <div class="info-field"><label>Date</label><input type="date" id="playerDate" /></div>
-    <div class="info-field">
-      <label>Position</label>
-      <select id="playerPosition">
-        <option value="" disabled selected>Select…</option>
-        <optgroup label="Goalkeeper"><option>GK – Goalkeeper</option></optgroup>
-        <optgroup label="Defenders">
-          <option>RB – Right Back</option><option>CB – Centre Back</option><option>LB – Left Back</option>
-          <option>RWB – Right Wing Back</option><option>LWB – Left Wing Back</option>
-        </optgroup>
-        <optgroup label="Midfielders">
-          <option>DM – Defensive Mid</option><option>CM – Central Mid</option><option>AM – Attacking Mid</option>
-          <option>RM – Right Mid</option><option>LM – Left Mid</option>
-        </optgroup>
-        <optgroup label="Forwards">
-          <option>RW – Right Wing</option><option>LW – Left Wing</option>
-          <option>SS – Second Striker</option><option>ST – Striker</option>
-        </optgroup>
-      </select>
-    </div>
-  </div>
-
-  <div class="summary-bar">
-    <div class="summary-stat"><div class="val good" id="totalGood">0</div><div class="lbl">Good</div></div>
-    <div class="summary-stat"><div class="val bad"  id="totalBad">0</div><div class="lbl">Bad</div></div>
-    <div class="summary-stat"><div class="val pct"  id="totalPct">—</div><div class="lbl">Success %</div></div>
-  </div>
-</div>
-
-<div class="event-counters">
-  <div class="event-counter">
-    <div class="ec-val" id="ec_goal">0</div>
-    <div class="ec-lbl">Goal</div>
-    <div class="ec-btns">
-      <button class="ec-plus"  data-ec="goal">+</button>
-      <button class="ec-minus" data-ec-minus="goal">−</button>
-    </div>
-  </div>
-  <div class="event-counter">
-    <div class="ec-val" id="ec_assist">0</div>
-    <div class="ec-lbl">Assist</div>
-    <div class="ec-btns">
-      <button class="ec-plus"  data-ec="assist">+</button>
-      <button class="ec-minus" data-ec-minus="assist">−</button>
-    </div>
-  </div>
-  <div class="event-counter">
-    <div class="ec-val" id="ec_save">0</div>
-    <div class="ec-lbl">Save</div>
-    <div class="ec-btns">
-      <button class="ec-plus"  data-ec="save">+</button>
-      <button class="ec-minus" data-ec-minus="save">−</button>
-    </div>
-  </div>
-</div>
-
-<div class="section-wrapper" id="skillsContainer"></div>
-
-<div class="bottom-area">
-  <button class="undo-btn" id="undoBtn" disabled>↩ Undo Last</button>
-  <button class="reset-btn" id="resetBtn">↺ Reset All</button>
-  <button class="report-btn" id="reportBtn">📋 Generate Report</button>
-  <div class="confirm-bar" id="confirmBar">
-    <span>Clear all data?</span>
-    <button class="confirm-yes" id="confirmYes">Yes, reset</button>
-    <button class="confirm-no"  id="confirmNo">Cancel</button>
-  </div>
-</div>
-
-<!-- Report modal -->
-<div class="modal-overlay" id="reportModal">
-  <div class="modal-topbar">
-    <button class="modal-close-btn" id="reportClose">✕ Close</button>
-    <button class="modal-close-btn" id="reportPrint" style="background:#1a1f2e;color:#e8ecf4;border-color:#1a1f2e;">🖨 Print / PDF</button>
-  </div>
-  <div class="rp" id="reportContent"></div>
-</div>
+<div id="app"></div>
 
 <script>
-(function() {
-
-var SKILLS = [
-  { section: "🦶 Technical", items: [
-    { id:"first_touch",  icon:"🎯", name:"First Touch" },
-    { id:"passing",      icon:"➡️", name:"Short Pass" },
-    { id:"long_pass",    icon:"📐", name:"Long Pass" },
-    { id:"through_ball", icon:"🔓", name:"Through Ball" },
-    { id:"crossing",     icon:"🌐", name:"Crossing" },
-    { id:"shooting",     icon:"⚡", name:"Shooting" },
-    { id:"dribbling",    icon:"🌀", name:"Dribbling" },
-    { id:"heading",      icon:"🔝", name:"Heading" }
+/* ---------- constants ---------- */
+var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var DAYS = Array.from({length:31}, function(_,i){return i+1;});
+var YEARS = Array.from({length:9}, function(_,i){return 2022+i;});
+var HOURS = Array.from({length:15}, function(_,i){return i+7;});
+var MINUTES = Array.from({length:12}, function(_,i){return i*5;});
+var POSITIONS = ["Goalkeeper","Right back","Centre back","Left back","Defensive midfielder","Central midfielder","Attacking midfielder","Right winger","Left winger","Striker"];
+var TEAMS = ["Bentleigh","Dandy City"];
+var OPPOSITION_TEAMS = ["Altona Magic SC","Avondale","Ballarat City FC","Bentleigh Greens SC","Brunswick City SC","Brunswick Juventus FC","Dandenong City","Dandenong Thunder","Eastern Lions SC","Eltham Redbacks FC","FC Bulleen Lions","Geelong Soccer Club","Goulburn Valley Suns FC","Green Gully","Heidelberg United FC","Hume City","Melbourne Knights FC","Melbourne Victory FC","Melbourne Victory Youth","Moreland City FC","Murray United FC","Northcote City FC","Oakleigh Cannons","Port Melbourne Sharks","Preston Lions","South Melbourne","St Albans Saints"];
+var EVENT_GROUPS = [
+  { title: "Involvement & passing", events: [
+    { key:"touch", label:"First touch", type:"pair", good:"Good", bad:"Poor" },
+    { key:"short_pass", label:"Short pass", type:"pair", good:"Success", bad:"Fail" },
+    { key:"long_pass", label:"Long pass", type:"pair", good:"Success", bad:"Fail" }
   ]},
-  { section: "🛡 Defending", items: [
-    { id:"tackle",       icon:"💥", name:"Tackle" },
-    { id:"interception", icon:"✋", name:"Interception" },
-    { id:"aerial_duel",  icon:"⬆️", name:"Aerial Duel" },
-    { id:"press",        icon:"🔥", name:"Press / Close Down" },
-    { id:"block",        icon:"🧱", name:"Block" },
-    { id:"body_pressure", icon:"💪", name:"Body Pressure" }
+  { title: "Attacking actions", events: [
+    { key:"dribble", label:"Dribble", type:"pair", good:"Success", bad:"Fail" }
   ]},
-  { section: "🧠 Decision Making", items: [
-    { id:"decision",     icon:"💡", name:"Decision Making" },
-    { id:"movement",     icon:"🏃", name:"Off-Ball Movement" },
-    { id:"support",      icon:"🤝", name:"Supporting Run" },
-    { id:"positioning",  icon:"📍", name:"Positioning" },
-    { id:"transition",   icon:"🔄", name:"Transition" }
+  { title: "Defensive actions", events: [
+    { key:"tackle", label:"Tackle", type:"pair", good:"Won", bad:"Lost" },
+    { key:"interception", label:"Interception", type:"single" },
+    { key:"block", label:"Block", type:"single" },
+    { key:"clearance", label:"Clearance", type:"single" }
+  ]},
+  { title: "Off the ball movement / positioning", events: [
+    { key:"movement", label:"Movement", type:"pair", good:"Good", bad:"Poor" },
+    { key:"positioning", label:"Positioning", type:"pair", good:"Good", bad:"Poor" },
+    { key:"run_in_behind", label:"Run in behind", type:"single" }
   ]}
 ];
+var OUTCOME_GOOD = ["Good","Success","Won"];
 
-var counts = {};
-SKILLS.forEach(function(s) {
-  s.items.forEach(function(i) { counts[i.id] = { good:0, bad:0 }; });
-});
+/* ---------- state ---------- */
+var S = {
+  screen: "settings",
+  form: { day:1, month:1, year:2026, kickoffHour:15, kickoffMinute:0, home:"Bentleigh", away:"", location:"", mode:"" },
+  errors: {},
+  ind: { player:null, events:[], minute:1, second:0, view:"tracking" },
+  _draftName: "",
+  _draftPosition: "Right back"
+};
 
-var ecCounts = { goal:0, assist:0, save:0 };
+function $(id){ return document.getElementById(id); }
+function pad2(n){ return String(n).padStart(2,"0"); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
-var lastAction = null;
-
-var TEAM_MAP = { Dominik:"Dandy City", Olek:"Bentleigh" };
-
-/* ---- helpers ---- */
-function updateCounts(id) {
-  var c = counts[id];
-  var total = c.good + c.bad;
-  var pct = total > 0 ? Math.round(c.good / total * 100) : 0;
-  document.getElementById('g_' + id).textContent = c.good;
-  document.getElementById('b_' + id).textContent = c.bad;
-  document.getElementById('bar_' + id).style.width = (total > 0 ? pct : 0) + '%';
+function formatDateLabel(f){
+  if(!f.day || !f.month || !f.year) return "";
+  var d = new Date(f.year, f.month-1, f.day);
+  return d.toLocaleDateString(undefined, { weekday:"short", day:"numeric", month:"short" });
+}
+function formatDateLabelLong(f){
+  if(!f.day || !f.month || !f.year) return "";
+  var d = new Date(f.year, f.month-1, f.day);
+  return d.toLocaleDateString(undefined, { day:"numeric", month:"short", year:"numeric" });
 }
 
-function updateTotals() {
-  var g = 0, b = 0;
-  Object.keys(counts).forEach(function(k) { g += counts[k].good; b += counts[k].bad; });
-  document.getElementById('totalGood').textContent = g;
-  document.getElementById('totalBad').textContent  = b;
-  var tot = g + b;
-  document.getElementById('totalPct').textContent  = tot > 0 ? Math.round(g/tot*100) + '%' : '—';
+/* ---------- render dispatcher ---------- */
+function render(){
+  var html;
+  if (S.screen === "settings") html = renderSettings();
+  else if (S.screen === "team") html = renderMatchStrip() + renderTeamBody();
+  else html = renderMatchStrip() + renderIndividualBody();
+  $("app").innerHTML = html;
 }
 
-function updateEC(id) {
-  document.getElementById('ec_' + id).textContent = ecCounts[id];
+/* ---------- settings screen ---------- */
+function renderSettings(){
+  var f = S.form, e = S.errors;
+  var dayOpts = DAYS.map(function(d){ return '<option value="'+d+'"'+(d===f.day?" selected":"")+'>'+d+'</option>'; }).join("");
+  var monthOpts = MONTHS.map(function(m,i){ return '<option value="'+(i+1)+'"'+((i+1)===f.month?" selected":"")+'>'+m+'</option>'; }).join("");
+  var yearOpts = YEARS.map(function(y){ return '<option value="'+y+'"'+(y===f.year?" selected":"")+'>'+y+'</option>'; }).join("");
+  var hourOpts = HOURS.map(function(h){ return '<option value="'+h+'"'+(h===f.kickoffHour?" selected":"")+'>'+pad2(h)+'</option>'; }).join("");
+  var minOpts = MINUTES.map(function(m){ return '<option value="'+m+'"'+(m===f.kickoffMinute?" selected":"")+'>'+pad2(m)+'</option>'; }).join("");
+  var teamOpts = TEAMS.map(function(t){ return '<option value="'+t+'"'+(t===f.home?" selected":"")+'>'+t+'</option>'; }).join("");
+  var oppOpts = '<option value="" disabled'+(f.away?"":" selected")+'>Select opposition</option>' +
+    OPPOSITION_TEAMS.map(function(t){ return '<option value="'+esc(t)+'"'+(t===f.away?" selected":"")+'>'+esc(t)+'</option>'; }).join("");
+
+  return ''
+  + '<div style="display:flex;flex-direction:column;min-height:100%">'
+  + '  <header class="mda-header">'
+  + '    <div class="mda-header-inner"><h1 class="mda-display">Match Day Analysis</h1></div>'
+  + '    <div class="mda-stripes"><div class="mda-stripe"></div><div class="mda-stripe"></div></div>'
+  + '  </header>'
+  + '  <main style="flex:1;padding:24px 24px 40px">'
+  + '    <div class="mda-card">'
+  + '      <div class="mda-field-grid">'
+  + '        <div>'
+  + '          <label class="mda-label">Date</label>'
+  + '          <div class="mda-date-grid">'
+  + '            <select class="mda-select" onchange="S.form.day=parseInt(this.value)">'+dayOpts+'</select>'
+  + '            <select class="mda-select" onchange="S.form.month=parseInt(this.value)">'+monthOpts+'</select>'
+  + '            <select class="mda-select" onchange="S.form.year=parseInt(this.value)">'+yearOpts+'</select>'
+  + '          </div>'
+  + '        </div>'
+  + '        <div>'
+  + '          <label class="mda-label">&#128336; Kick-off time</label>'
+  + '          <div class="mda-time-grid">'
+  + '            <select class="mda-select" onchange="S.form.kickoffHour=parseInt(this.value)">'+hourOpts+'</select>'
+  + '            <select class="mda-select" onchange="S.form.kickoffMinute=parseInt(this.value)">'+minOpts+'</select>'
+  + '          </div>'
+  + '        </div>'
+  + '        <div>'
+  + '          <label class="mda-label">Team</label>'
+  + '          <select class="mda-select" onchange="S.form.home=this.value">'+teamOpts+'</select>'
+  + (e.home ? '<p class="mda-error">'+e.home+'</p>' : '')
+  + '        </div>'
+  + '        <div>'
+  + '          <label class="mda-label">Opposition</label>'
+  + '          <select class="mda-select" onchange="S.form.away=this.value">'+oppOpts+'</select>'
+  + (e.away ? '<p class="mda-error">'+e.away+'</p>' : '')
+  + '        </div>'
+  + '        <div style="grid-column:1 / -1">'
+  + '          <label class="mda-label">&#128205; Location</label>'
+  + '          <input type="text" class="mda-input" value="'+esc(f.location)+'" placeholder="e.g. Meadowbrook Stadium" oninput="S.form.location=this.value" />'
+  + (e.location ? '<p class="mda-error">'+e.location+'</p>' : '')
+  + '        </div>'
+  + '      </div>'
+  + '      <div style="margin-top:36px">'
+  + '        <p class="mda-label" style="margin-bottom:12px">What are you analyzing?</p>'
+  + '        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+  + '          <button type="button" id="modeTeamCard" class="mda-option'+(f.mode==="team"?" selected":"")+'" onclick="selectMode(\'team\')">'
+  + '            <div class="mda-opt-icon">&#128101;</div>'
+  + '            <div class="mda-option-title mda-display">Team analysis</div>'
+  + '            <p class="mda-option-desc">Shape, structure and patterns of play across both sides.</p>'
+  + '          </button>'
+  + '          <button type="button" id="modeIndividualCard" class="mda-option'+(f.mode==="individual"?" selected":"")+'" onclick="selectMode(\'individual\')">'
+  + '            <div class="mda-opt-icon">&#128100;</div>'
+  + '            <div class="mda-option-title mda-display">Individual analysis</div>'
+  + '            <p class="mda-option-desc">Track a single player\'s involvement in detail.</p>'
+  + '          </button>'
+  + '        </div>'
+  + (e.mode ? '<p class="mda-error">'+e.mode+'</p>' : '')
+  + '      </div>'
+  + '      <button type="button" class="mda-btn-primary" onclick="handleContinue()">Start analysis</button>'
+  + '    </div>'
+  + '  </main>'
+  + '</div>';
 }
 
-function getPlayerName() {
-  var sel = document.getElementById('playerName');
-  if (sel.value === '__other__') return document.getElementById('playerNameOther').value || 'Unknown';
-  return sel.value || 'Unknown';
+function selectMode(mode){
+  S.form.mode = mode;
+  $("modeTeamCard").classList.toggle("selected", mode==="team");
+  $("modeIndividualCard").classList.toggle("selected", mode==="individual");
 }
 
-/* ---- build skill cards ---- */
-var container = document.getElementById('skillsContainer');
-SKILLS.forEach(function(section) {
-  var title = document.createElement('div');
-  title.className = 'section-title';
-  title.textContent = section.section;
-  container.appendChild(title);
-
-  var grid = document.createElement('div');
-  grid.className = 'skills-grid';
-
-  section.items.forEach(function(skill) {
-    var card = document.createElement('div');
-    card.className = 'skill-card';
-    card.innerHTML =
-      '<div class="skill-icon">' + skill.icon + '</div>' +
-      '<div style="flex:1;min-width:0">' +
-        '<div class="skill-name">' + skill.name + '</div>' +
-        '<div class="mini-bar"><div class="mini-bar-fill" id="bar_' + skill.id + '" style="width:0%"></div></div>' +
-      '</div>' +
-      '<div class="skill-counts">' +
-        '<span class="count-badge good" id="g_' + skill.id + '">0</span>' +
-        '<button class="tap-btn good" data-id="' + skill.id + '" data-type="good">✓</button>' +
-        '<button class="tap-btn bad"  data-id="' + skill.id + '" data-type="bad">✗</button>' +
-        '<span class="count-badge bad"  id="b_' + skill.id + '">0</span>' +
-      '</div>';
-    grid.appendChild(card);
-  });
-  container.appendChild(grid);
-});
-
-/* ---- event listeners ---- */
-
-// skill tap
-container.addEventListener('click', function(e) {
-  var btn = e.target.closest('[data-type]');
-  if (!btn) return;
-  var tid = btn.getAttribute('data-id');
-  var ttype = btn.getAttribute('data-type');
-  counts[tid][ttype]++;
-  lastAction = { kind:'skill', id:tid, type:ttype };
-  document.getElementById('undoBtn').disabled = false;
-  updateCounts(tid);
-  updateTotals();
-});
-
-// goal/assist/save
-document.querySelector('.event-counters').addEventListener('click', function(e) {
-  var plus  = e.target.closest('[data-ec]');
-  var minus = e.target.closest('[data-ec-minus]');
-  if (plus)  { var k = plus.getAttribute('data-ec');       ecCounts[k]++; lastAction = { kind:'ec', id:k, type:'plus' };  document.getElementById('undoBtn').disabled = false; updateEC(k); }
-  if (minus) { var k = minus.getAttribute('data-ec-minus'); if (ecCounts[k]>0) { ecCounts[k]--; lastAction = { kind:'ec', id:k, type:'minus' }; document.getElementById('undoBtn').disabled = false; } updateEC(k); }
-});
-
-// player name
-document.getElementById('playerName').addEventListener('change', function() {
-  var other = document.getElementById('playerNameOther');
-  var team  = document.getElementById('playerTeam');
-  if (this.value === '__other__') {
-    other.style.display = 'block'; other.focus(); team.value = '';
-  } else {
-    other.style.display = 'none'; other.value = '';
-    team.value = TEAM_MAP[this.value] || '';
+function handleContinue(){
+  var f = S.form, errors = {};
+  if(!f.home) errors.home = "Required";
+  if(!f.away) errors.away = "Required";
+  if(!f.location) errors.location = "Required";
+  if(!f.mode) errors.mode = "Choose team or individual analysis";
+  S.errors = errors;
+  if(Object.keys(errors).length === 0){
+    S.screen = f.mode === "team" ? "team" : "individual";
+    if(f.mode === "individual"){
+      S.ind = { player:null, events:[], minute:1, second:0, view:"tracking" };
+      S._draftName = ""; S._draftPosition = "Right back";
+    }
   }
-});
+  render();
+}
 
-// report
-document.getElementById('reportBtn').addEventListener('click', function() {
-  var name     = getPlayerName();
-  var team     = document.getElementById('playerTeam').value     || '—';
-  var opponent = document.getElementById('playerOpponent').value || '—';
-  var location = document.getElementById('playerLocation').value || '—';
-  var date     = document.getElementById('playerDate').value     || '—';
-  var position = document.getElementById('playerPosition').value || '—';
+/* ---------- shared match strip ---------- */
+function renderMatchStrip(){
+  var f = S.form;
+  var dateLabel = formatDateLabel(f);
+  var timeLabel = pad2(f.kickoffHour)+":"+pad2(f.kickoffMinute);
+  return ''
+  + '<div class="mda-strip">'
+  + '  <button class="mda-back mda-back-light" onclick="goBackToSettings()">&#8249; Setup</button>'
+  + '  <div class="mda-divider"></div>'
+  + '  <div class="mda-strip-title mda-display">'+esc(f.home||"Home")+' <span style="opacity:0.6">vs</span> '+esc(f.away||"Away")+'</div>'
+  + '  <div class="mda-strip-meta">'
+  + (dateLabel ? '<span>'+dateLabel+'</span>' : '')
+  + '<span>'+timeLabel+'</span>'
+  + (f.location ? '<span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.location)+'</span>' : '')
+  + '  </div>'
+  + '</div>';
+}
+function goBackToSettings(){ S.screen = "settings"; render(); }
 
-  var totalG = 0, totalB = 0;
-  Object.keys(counts).forEach(function(k) { totalG += counts[k].good; totalB += counts[k].bad; });
-  var totalAll = totalG + totalB;
-  var overallPct = totalAll > 0 ? Math.round(totalG / totalAll * 100) + '%' : '—';
+/* ---------- team analysis placeholder ---------- */
+function renderTeamBody(){
+  var f = S.form;
+  return ''
+  + '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:64px 24px;text-align:center">'
+  + '  <div>'
+  + '    <div style="font-size:32px;margin-bottom:16px">&#128101;</div>'
+  + '    <h2 class="mda-display" style="color:#1A1A1A;font-size:24px;font-weight:700">Team analysis workspace</h2>'
+  + '    <p style="color:#6B6B6B;font-size:14px;margin-top:8px;max-width:380px;margin-left:auto;margin-right:auto">'
+  + '      This is where formation, phases of play, and team-level stats for '+esc(f.home||"Home")+' vs '+esc(f.away||"Away")+' will live.'
+  + '    </p>'
+  + '  </div>'
+  + '</div>';
+}
 
-  var tableRows = '';
-  SKILLS.forEach(function(section) {
-    var rows = '';
-    section.items.forEach(function(skill) {
-      var c = counts[skill.id];
-      var tot = c.good + c.bad;
-      var pct = tot > 0 ? Math.round(c.good / tot * 100) : 0;
-      var col = pct >= 70 ? '#2e7d32' : pct >= 40 ? '#f57f17' : '#c62828';
-      rows +=
-        '<tr>' +
-        '<td>' + skill.name + '</td>' +
-        '<td style="color:#2e7d32;font-weight:600">' + c.good + '</td>' +
-        '<td style="color:#c62828;font-weight:600">' + c.bad + '</td>' +
-        '<td>' + tot + '</td>' +
-        '<td><div class="sbar"><div class="sbar-bg"><div class="sbar-fill" style="width:' + pct + '%;background:' + col + '"></div></div>' +
-        '<span style="font-weight:600;color:' + col + ';min-width:34px">' + pct + '%</span></div></td>' +
-        '</tr>';
+/* ---------- individual analysis ---------- */
+function renderIndividualBody(){
+  if(!S.ind.player) return renderPlayerSetup();
+  if(S.ind.view === "report") return renderReport();
+  return renderTracker();
+}
+
+function renderPlayerSetup(){
+  var posOpts = POSITIONS.map(function(p){ return '<option value="'+p+'"'+(p===S._draftPosition?" selected":"")+'>'+p+'</option>'; }).join("");
+  return ''
+  + '<div class="mda-tracker">'
+  + '  <div class="mda-player-form">'
+  + '    <p class="mda-label" style="margin-bottom:16px">Who are you tracking?</p>'
+  + '    <div class="mda-player-grid">'
+  + '      <div>'
+  + '        <label class="mda-label">Player name</label>'
+  + '        <input type="text" class="mda-input" id="playerNameInput" value="'+esc(S._draftName)+'" placeholder="e.g. Sam Carter" oninput="onPlayerNameInput(this.value)" />'
+  + '      </div>'
+  + '      <div>'
+  + '        <label class="mda-label">Position</label>'
+  + '        <select class="mda-select" onchange="S._draftPosition=this.value">'+posOpts+'</select>'
+  + '      </div>'
+  + '    </div>'
+  + '    <button type="button" class="mda-btn-primary" id="startTrackBtn" '+(S._draftName.trim()?"":"disabled")+' style="opacity:'+(S._draftName.trim()?1:0.5)+'" onclick="startTracking()">Start tracking</button>'
+  + '  </div>'
+  + '</div>';
+}
+function onPlayerNameInput(val){
+  S._draftName = val;
+  var btn = $("startTrackBtn");
+  var has = val.trim().length > 0;
+  btn.disabled = !has;
+  btn.style.opacity = has ? 1 : 0.5;
+}
+function startTracking(){
+  var name = (S._draftName||"").trim();
+  if(!name) return;
+  S.ind.player = { name: name, position: S._draftPosition || "Right back" };
+  render();
+}
+function changePlayer(){
+  S.ind.player = null;
+  S._draftName = ""; S._draftPosition = "Right back";
+  render();
+}
+
+function renderTracker(){
+  var p = S.ind.player;
+  var groupsHtml = EVENT_GROUPS.map(function(group){
+    var btns = group.events.map(function(ev){
+      if(ev.type === "pair"){
+        return '<div class="mda-btn-row">'
+          + '<button class="mda-event-btn positive" onclick="logEvent(\''+esc(ev.label)+'\',\''+esc(ev.good)+'\')">'+esc(ev.label)+' &middot; '+esc(ev.good)+'</button>'
+          + '<button class="mda-event-btn negative" onclick="logEvent(\''+esc(ev.label)+'\',\''+esc(ev.bad)+'\')">'+esc(ev.label)+' &middot; '+esc(ev.bad)+'</button>'
+          + '</div>';
+      }
+      return '<div class="mda-btn-row single">'
+        + '<button class="mda-event-btn neutral" onclick="logEvent(\''+esc(ev.label)+'\',null)">'+esc(ev.label)+'</button>'
+        + '</div>';
+    }).join("");
+    return '<div><p class="mda-group-title">'+esc(group.title)+'</p>'+btns+'</div>';
+  }).join("");
+
+  var logItems = S.ind.events.length === 0
+    ? '<p class="mda-log-empty" id="logEmptyMsg">No events logged yet — tap a button above to start.</p>'
+    : S.ind.events.map(logItemHtml).join("");
+
+  return ''
+  + '<div class="mda-tracker">'
+  + '  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">'
+  + '    <div class="mda-player-chip mda-display">'+esc(p.name)+' <span class="pos">&mdash; '+esc(p.position)+'</span></div>'
+  + '    <button class="mda-back" onclick="changePlayer()">Change player</button>'
+  + '  </div>'
+  + '  <div class="mda-minute-bar">'
+  + '    <div class="mda-time-group">'
+  + '      <span class="mda-minute-label">Minute</span>'
+  + '      <div style="display:flex;align-items:center;gap:14px">'
+  + '        <button class="mda-minute-btn" onclick="stepMinute(-1)">&ndash;</button>'
+  + '        <span class="mda-minute-value" id="minuteVal">'+S.ind.minute+'\'</span>'
+  + '        <button class="mda-minute-btn" onclick="stepMinute(1)">+</button>'
+  + '      </div>'
+  + '    </div>'
+  + '    <div class="mda-time-divider"></div>'
+  + '    <div class="mda-time-group">'
+  + '      <span class="mda-minute-label">Seconds</span>'
+  + '      <div style="display:flex;align-items:center;gap:14px">'
+  + '        <button class="mda-minute-btn" onclick="stepSecond(-5)">&ndash;</button>'
+  + '        <span class="mda-minute-value" id="secondVal">'+pad2(S.ind.second)+'"</span>'
+  + '        <button class="mda-minute-btn" onclick="stepSecond(5)">+</button>'
+  + '      </div>'
+  + '    </div>'
+  + '  </div>'
+  + groupsHtml
+  + '  <div class="mda-log">'
+  + '    <p class="mda-group-title">Event log</p>'
+  + '    <div id="eventLog">'+logItems+'</div>'
+  + '  </div>'
+  + '  <button type="button" class="mda-finish-btn" id="finishBtn" '+(S.ind.events.length===0?"disabled":"")+' style="opacity:'+(S.ind.events.length===0?0.5:1)+'" onclick="finishAnalysis()">Finish &amp; view report</button>'
+  + '</div>';
+}
+
+function logItemHtml(ev){
+  var dotColor = ev.outcome == null ? "#E8A33D" : (OUTCOME_GOOD.indexOf(ev.outcome) !== -1 ? "#2E7D4F" : "#A13328");
+  return '<div class="mda-log-item" id="log-'+ev.id+'">'
+    + '<span class="mda-log-minute">'+ev.minute+'\''+pad2(ev.second)+'"</span>'
+    + '<span class="mda-log-dot" style="background:'+dotColor+'"></span>'
+    + '<span class="mda-log-label">'+esc(ev.label)+(ev.outcome ? ' &middot; '+esc(ev.outcome) : '')+'</span>'
+    + '<button class="mda-log-del" onclick="removeEvent('+ev.id+')">&#10005;</button>'
+    + '</div>';
+}
+
+function stepMinute(delta){
+  S.ind.minute = Math.max(0, Math.min(120, S.ind.minute + delta));
+  $("minuteVal").textContent = S.ind.minute + "'";
+}
+function stepSecond(delta){
+  S.ind.second = Math.max(0, Math.min(55, S.ind.second + delta));
+  $("secondVal").textContent = pad2(S.ind.second) + '"';
+}
+
+var _eventSeq = 0;
+function logEvent(label, outcome){
+  _eventSeq += 1;
+  var ev = { id: Date.now() + "_" + _eventSeq, minute: S.ind.minute, second: S.ind.second, label: label, outcome: outcome };
+  S.ind.events.unshift(ev);
+  var container = $("eventLog");
+  var empty = $("logEmptyMsg");
+  if(empty) empty.remove();
+  container.insertAdjacentHTML("afterbegin", logItemHtml(ev));
+  updateFinishButtonState();
+}
+function removeEvent(id){
+  S.ind.events = S.ind.events.filter(function(e){ return String(e.id) !== String(id); });
+  var el = $("log-"+id);
+  if(el) el.remove();
+  if(S.ind.events.length === 0){
+    $("eventLog").innerHTML = '<p class="mda-log-empty" id="logEmptyMsg">No events logged yet — tap a button above to start.</p>';
+  }
+  updateFinishButtonState();
+}
+function updateFinishButtonState(){
+  var btn = $("finishBtn");
+  var has = S.ind.events.length > 0;
+  btn.disabled = !has;
+  btn.style.opacity = has ? 1 : 0.5;
+}
+function finishAnalysis(){
+  if(S.ind.events.length === 0) return;
+  S.ind.view = "report";
+  render();
+}
+
+/* ---------- report ---------- */
+function computeStats(events){
+  var map = {};
+  events.forEach(function(e){
+    if(!map[e.label]) map[e.label] = { good:0, bad:0, neutral:0 };
+    if(e.outcome == null) map[e.label].neutral += 1;
+    else if(OUTCOME_GOOD.indexOf(e.outcome) !== -1) map[e.label].good += 1;
+    else map[e.label].bad += 1;
+  });
+  return Object.keys(map).map(function(label){
+    var c = map[label];
+    var attempts = c.good + c.bad;
+    return { label:label, good:c.good, bad:c.bad, neutral:c.neutral, total:c.good+c.bad+c.neutral, pct: attempts>0 ? Math.round((c.good/attempts)*100) : null };
+  });
+}
+
+function renderReport(){
+  var p = S.ind.player, f = S.form, events = S.ind.events;
+  var stats = computeStats(events);
+  var dateLabel = formatDateLabelLong(f);
+
+  var groupsHtml = EVENT_GROUPS.map(function(group){
+    var rows = group.events.map(function(ev){
+      return stats.filter(function(s){ return s.label === ev.label; })[0];
+    }).filter(Boolean);
+    if(rows.length === 0) return "";
+    var rowsHtml = rows.map(function(r){
+      var figure = r.pct != null
+        ? r.good+'/'+(r.good+r.bad)+' &middot; <b>'+r.pct+'%</b>'
+        : 'count: <b>'+r.total+'</b>';
+      var bar = r.pct != null
+        ? '<div class="mda-bar-track"><div class="mda-bar-fill" style="width:'+r.pct+'%"></div></div>'
+        : '';
+      return '<div class="mda-stat-row">'
+        + '<div class="mda-stat-top"><span class="mda-stat-name">'+esc(r.label)+'</span><span class="mda-stat-figure">'+figure+'</span></div>'
+        + bar
+        + '</div>';
+    }).join("");
+    return '<div class="mda-report-card"><p class="mda-report-group-title">'+esc(group.title)+'</p>'+rowsHtml+'</div>';
+  }).join("");
+
+  return ''
+  + '<div class="mda-tracker">'
+  + '  <div class="mda-report-header">'
+  + '    <p class="mda-report-title mda-display">'+esc(p.name)+' &mdash; '+esc(p.position)+'</p>'
+  + '    <p class="mda-report-sub">'+esc(f.home||"Home")+' vs '+esc(f.away||"Away")+(dateLabel?' &middot; '+dateLabel:'')+' &middot; '+events.length+' events logged</p>'
+  + '  </div>'
+  + groupsHtml
+  + (stats.length === 0 ? '<p class="mda-report-empty">No events were logged for this player.</p>' : '')
+  + '  <div class="mda-report-actions">'
+  + '    <button type="button" class="mda-report-btn" onclick="backToTracking()">Back to tracking</button>'
+  + '    <button type="button" class="mda-report-btn primary" onclick="downloadReport()">Save report (.txt)</button>'
+  + '  </div>'
+  + '  <div style="margin-top:10px">'
+  + '    <button type="button" class="mda-report-btn" onclick="startNewPlayerFlow()">Start new player</button>'
+  + '  </div>'
+  + '</div>';
+}
+
+function backToTracking(){ S.ind.view = "tracking"; render(); }
+function startNewPlayerFlow(){
+  S.ind = { player:null, events:[], minute:1, second:0, view:"tracking" };
+  S._draftName = ""; S._draftPosition = "Right back";
+  render();
+}
+
+function buildReportText(){
+  var p = S.ind.player, f = S.form, events = S.ind.events;
+  var stats = computeStats(events);
+  var dateLabel = (f.day && f.month && f.year) ? (f.day+" "+MONTHS[f.month-1]+" "+f.year) : "";
+  var lines = [];
+  lines.push("MATCH DAY ANALYSIS — INDIVIDUAL REPORT");
+  lines.push((f.home||"Home")+" vs "+(f.away||"Away"));
+  if(dateLabel) lines.push(dateLabel);
+  if(f.location) lines.push(f.location);
+  lines.push("");
+  lines.push("Player: "+p.name);
+  lines.push("Position: "+p.position);
+  lines.push("Total events logged: "+events.length);
+  lines.push("");
+  EVENT_GROUPS.forEach(function(group){
+    var rows = group.events.map(function(ev){ return stats.filter(function(s){ return s.label===ev.label; })[0]; }).filter(Boolean);
+    if(rows.length === 0) return;
+    lines.push(group.title.toUpperCase());
+    rows.forEach(function(r){
+      if(r.pct != null) lines.push("  "+r.label+": "+r.good+"/"+(r.good+r.bad)+" successful ("+r.pct+"%)");
+      else lines.push("  "+r.label+": "+r.total);
     });
-    if (!rows) return;
-    tableRows += '<tr><td colspan="5" class="rp-sec-title">' + section.section + '</td></tr>' + rows;
+    lines.push("");
   });
+  return lines.join("\n");
+}
+function downloadReport(){
+  var text = buildReportText();
+  var blob = new Blob([text], { type: "text/plain" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = S.ind.player.name.replace(/\s+/g,"_") + "_report.txt";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
-  document.getElementById('reportContent').innerHTML =
-    '<h1>Player Report</h1>' +
-    '<div class="rp-sub">Individual Performance Analysis</div>' +
-    '<div class="rp-info">' +
-      '<div class="rp-info-item"><div class="lbl">Player</div><div class="val">'   + name     + '</div></div>' +
-      '<div class="rp-info-item"><div class="lbl">Team</div><div class="val">'     + team     + '</div></div>' +
-      '<div class="rp-info-item"><div class="lbl">Opponent</div><div class="val">' + opponent + '</div></div>' +
-      '<div class="rp-info-item"><div class="lbl">Location</div><div class="val">' + location + '</div></div>' +
-      '<div class="rp-info-item"><div class="lbl">Date</div><div class="val">'     + date     + '</div></div>' +
-      '<div class="rp-info-item"><div class="lbl">Position</div><div class="val">' + position + '</div></div>' +
-    '</div>' +
-    '<div class="rp-events">' +
-      '<div class="rp-ev goal"><div class="rp-ev-num">'   + ecCounts.goal   + '</div><div class="rp-ev-lbl">Goals</div></div>' +
-      '<div class="rp-ev assist"><div class="rp-ev-num">' + ecCounts.assist + '</div><div class="rp-ev-lbl">Assists</div></div>' +
-      '<div class="rp-ev save"><div class="rp-ev-num">'   + ecCounts.save   + '</div><div class="rp-ev-lbl">Saves</div></div>' +
-    '</div>' +
-    '<div class="rp-overall">' +
-      '<div class="rp-ov good"><div class="rp-ov-num">' + totalG     + '</div><div class="rp-ov-lbl">Good Actions</div></div>' +
-      '<div class="rp-ov bad"><div class="rp-ov-num">'  + totalB     + '</div><div class="rp-ov-lbl">Bad Actions</div></div>' +
-      '<div class="rp-ov pct"><div class="rp-ov-num">'  + overallPct + '</div><div class="rp-ov-lbl">Success Rate</div></div>' +
-    '</div>' +
-    (tableRows
-      ? '<table class="rp-table"><thead><tr><th>Skill</th><th>Good</th><th>Bad</th><th>Total</th><th>Success</th></tr></thead><tbody>' + tableRows + '</tbody></table>'
-      : '<p style="color:#bbb;text-align:center;padding:32px">No skill data recorded yet.</p>');
+/* ---------- boot ---------- */
+render();
 
-  document.getElementById('reportModal').classList.add('visible');
-});
-
-// close report
-document.getElementById('reportClose').addEventListener('click', function() {
-  document.getElementById('reportModal').classList.remove('visible');
-});
-
-// print report
-document.getElementById('reportPrint').addEventListener('click', function() {
-  // Show only the report, hide everything else, then print
-  document.body.classList.add('printing');
-  window.print();
-  document.body.classList.remove('printing');
-});
-
-// undo
-document.getElementById('undoBtn').addEventListener('click', function() {
-  if (!lastAction) return;
-  if (lastAction.kind === 'skill') {
-    if (counts[lastAction.id][lastAction.type] > 0) {
-      counts[lastAction.id][lastAction.type]--;
-      updateCounts(lastAction.id);
-      updateTotals();
-    }
-  } else if (lastAction.kind === 'ec') {
-    if (lastAction.type === 'plus' && ecCounts[lastAction.id] > 0) {
-      ecCounts[lastAction.id]--;
-      updateEC(lastAction.id);
-    } else if (lastAction.type === 'minus') {
-      ecCounts[lastAction.id]++;
-      updateEC(lastAction.id);
-    }
-  }
-  lastAction = null;
-  document.getElementById('undoBtn').disabled = true;
-});
-
-// reset
-document.getElementById('resetBtn').addEventListener('click', function() {
-  document.getElementById('confirmBar').classList.toggle('visible');
-});
-document.getElementById('confirmYes').addEventListener('click', function() {
-  Object.keys(counts).forEach(function(k) { counts[k] = { good:0, bad:0 }; });
-  Object.keys(ecCounts).forEach(function(k) { ecCounts[k] = 0; updateEC(k); });
-  document.getElementById('playerName').selectedIndex = 0;
-  document.getElementById('playerNameOther').style.display = 'none';
-  document.getElementById('playerNameOther').value = '';
-  ['playerTeam','playerOpponent','playerLocation'].forEach(function(id) { document.getElementById(id).value = ''; });
-  document.getElementById('playerDate').valueAsDate = new Date();
-  document.getElementById('playerPosition').selectedIndex = 0;
-  Object.keys(counts).forEach(function(id) { updateCounts(id); });
-  updateTotals();
-  lastAction = null;
-  document.getElementById('undoBtn').disabled = true;
-  document.getElementById('confirmBar').classList.remove('visible');
-});
-document.getElementById('confirmNo').addEventListener('click', function() {
-  lastAction = null;
-  document.getElementById('undoBtn').disabled = true;
-  document.getElementById('confirmBar').classList.remove('visible');
-});
-
-// init
-document.getElementById('playerDate').valueAsDate = new Date();
-
-})();
-</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js');
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("service-worker.js").catch(function (err) {
+      console.warn("Service worker registration failed:", err);
+    });
   });
 }
 </script>
